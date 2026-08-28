@@ -1,11 +1,13 @@
-import { Button, Layout, Menu, Typography, theme } from "antd";
-import { BookOutlined, CommentOutlined } from "@ant-design/icons";
+import { App as AntApp, Button, Layout, Menu, theme } from "antd";
+import { BookOutlined, CommentOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useState } from "react";
+import { client } from "./api/client";
+import KnowledgeBasesPage from "./pages/KnowledgeBases";
+import LoginPage from "./pages/Login";
 
 const { Header, Sider, Content } = Layout;
 
-// 骨架占位：M4 阶段替换为 登录 / 知识库管理 / 文档上传 / 对话 四个页面
-export default function App() {
+function Shell({ onLogout }: { onLogout: () => void }) {
   const { token } = theme.useToken();
   const [page, setPage] = useState("kbs");
 
@@ -13,9 +15,8 @@ export default function App() {
     <Layout style={{ minHeight: "100vh" }}>
       <Sider theme="light" style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}>
         <div style={{ padding: 16 }}>
-          <Typography.Title level={4} style={{ margin: 0 }}>
-            KnowBase
-          </Typography.Title>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>KnowBase</div>
+          <div style={{ color: token.colorTextTertiary, fontSize: 12 }}>AI 知识库问答</div>
         </div>
         <Menu
           mode="inline"
@@ -23,25 +24,54 @@ export default function App() {
           onClick={(e) => setPage(e.key)}
           items={[
             { key: "kbs", icon: <BookOutlined />, label: "知识库" },
-            { key: "chat", icon: <CommentOutlined />, label: "对话" },
+            { key: "chat", icon: <CommentOutlined />, label: "对话", disabled: true },
           ]}
         />
+        <Button
+          type="text"
+          icon={<LogoutOutlined />}
+          onClick={onLogout}
+          style={{ position: "absolute", bottom: 16, width: "100%" }}
+        >
+          退出登录
+        </Button>
       </Sider>
       <Layout>
-        <Header
-          style={{ background: token.colorBgContainer, borderBottom: `1px solid ${token.colorBorderSecondary}` }}
-        />
-        <Content style={{ padding: 24, background: token.colorBgLayout }}>
-          <Typography.Text type="secondary">
-            页面骨架占位 —— M1 只跑通前后端联通，M4 完成完整界面。
-          </Typography.Text>
-          <div style={{ marginTop: 16 }}>
-            <Button type="primary" onClick={() => setPage("kbs")}>
-              开始使用
-            </Button>
-          </div>
+        <Header style={{ background: token.colorBgContainer, borderBottom: `1px solid ${token.colorBorderSecondary}` }} />
+        <Content style={{ padding: 24, background: token.colorBgLayout, overflow: "auto" }}>
+          {page === "kbs" ? <KnowledgeBasesPage /> : null}
         </Content>
       </Layout>
     </Layout>
+  );
+}
+
+export default function App() {
+  const { message } = AntApp.useApp();
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
+
+  if (!token) {
+    return (
+      <AntApp>
+        <LoginPage
+          onLogin={() => {
+            message.success("登录成功");
+            setToken(localStorage.getItem("token"));
+          }}
+        />
+      </AntApp>
+    );
+  }
+
+  return (
+    <AntApp>
+      <Shell
+        onLogout={() => {
+          localStorage.removeItem("token");
+          client.defaults.headers.common["Authorization"] = undefined;
+          setToken(null);
+        }}
+      />
+    </AntApp>
   );
 }

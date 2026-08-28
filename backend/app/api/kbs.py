@@ -56,7 +56,12 @@ def create_kb(body: KBIn, user: User = Depends(current_user), db: Session = Depe
 @router.delete("/kbs/{kb_id}")
 def delete_kb(kb_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)):
     kb = _owned_kb(kb_id, user, db)
-    # TODO(M2): 级联删除 documents/chunks 及 Qdrant collection
+    doc_ids = db.scalars(select(Document.id).where(Document.kb_id == kb_id)).all()
+    if doc_ids:
+        db.query(Chunk).filter(Chunk.document_id.in_(doc_ids)).delete(synchronize_session=False)
+        db.query(Document).filter(Document.id.in_(doc_ids)).delete(synchronize_session=False)
+    db.query(Chunk).filter(Chunk.kb_id == kb_id).delete(synchronize_session=False)
+    # TODO(M2): 同步删除 Qdrant 中该知识库的 collection
     db.delete(kb)
     db.commit()
     return {"ok": True}
