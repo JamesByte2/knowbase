@@ -1,15 +1,40 @@
-import { App as AntApp, Button, Layout, Menu, theme } from "antd";
-import { BookOutlined, CommentOutlined, LogoutOutlined } from "@ant-design/icons";
+import { App as AntApp, Button, Layout, Menu, Tabs, theme } from "antd";
+import { BookOutlined, LogoutOutlined } from "@ant-design/icons";
 import { useState } from "react";
-import { client } from "./api/client";
+import { client, KnowledgeBase } from "./api/client";
+import ChatPage from "./pages/Chat";
+import DocumentsPage from "./pages/Documents";
 import KnowledgeBasesPage from "./pages/KnowledgeBases";
 import LoginPage from "./pages/Login";
 
 const { Header, Sider, Content } = Layout;
 
+function KBWorkbench({ kb, onBack }: { kb: KnowledgeBase; onBack: () => void }) {
+  const [docsChanged, setDocsChanged] = useState(0);
+  return (
+    <div style={{ maxWidth: 860, margin: "0 auto" }}>
+      <Button type="link" style={{ padding: 0, marginBottom: 8 }} onClick={onBack}>
+        ← 返回知识库列表
+      </Button>
+      <Tabs
+        defaultActiveKey="chat"
+        items={[
+          { key: "chat", label: "对话提问", children: <ChatPage kb={kb} key={`chat-${docsChanged}`} /> },
+          {
+            key: "docs",
+            label: "文档管理",
+            children: <DocumentsPage kb={kb} onChanged={() => setDocsChanged((n) => n + 1)} />,
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
 function Shell({ onLogout }: { onLogout: () => void }) {
   const { token } = theme.useToken();
   const [page, setPage] = useState("kbs");
+  const [activeKb, setActiveKb] = useState<KnowledgeBase | null>(null);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -20,12 +45,12 @@ function Shell({ onLogout }: { onLogout: () => void }) {
         </div>
         <Menu
           mode="inline"
-          selectedKeys={[page]}
-          onClick={(e) => setPage(e.key)}
-          items={[
-            { key: "kbs", icon: <BookOutlined />, label: "知识库" },
-            { key: "chat", icon: <CommentOutlined />, label: "对话", disabled: true },
-          ]}
+          selectedKeys={["kbs"]}
+          onClick={(e) => {
+            setPage(e.key);
+            setActiveKb(null);
+          }}
+          items={[{ key: "kbs", icon: <BookOutlined />, label: "知识库" }]}
         />
         <Button
           type="text"
@@ -39,7 +64,11 @@ function Shell({ onLogout }: { onLogout: () => void }) {
       <Layout>
         <Header style={{ background: token.colorBgContainer, borderBottom: `1px solid ${token.colorBorderSecondary}` }} />
         <Content style={{ padding: 24, background: token.colorBgLayout, overflow: "auto" }}>
-          {page === "kbs" ? <KnowledgeBasesPage /> : null}
+          {activeKb ? (
+            <KBWorkbench kb={activeKb} onBack={() => setActiveKb(null)} />
+          ) : (
+            <KnowledgeBasesPage onOpen={setActiveKb} />
+          )}
         </Content>
       </Layout>
     </Layout>

@@ -3,7 +3,11 @@ import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import { useCallback, useEffect, useState } from "react";
 import { client, KnowledgeBase } from "../api/client";
 
-export default function KnowledgeBasesPage() {
+interface Props {
+  onOpen?: (kb: KnowledgeBase) => void;
+}
+
+export default function KnowledgeBasesPage({ onOpen }: Props) {
   const { message } = AntApp.useApp();
   const [kbs, setKbs] = useState<KnowledgeBase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,13 +68,28 @@ export default function KnowledgeBasesPage() {
         locale={{ emptyText: <Empty description="还没有知识库，点击右上角新建" /> }}
         renderItem={(kb) => (
           <List.Item
+            style={{ cursor: onOpen ? "pointer" : undefined }}
+            onClick={() => onOpen?.(kb)}
             actions={[
-              <Popconfirm key="del" title="确定删除该知识库及其全部文档？" onConfirm={() => remove(kb.id)}>
-                <Button type="text" danger icon={<DeleteOutlined />} />
+              <Popconfirm
+                key="del"
+                title="确定删除该知识库及其全部文档？"
+                onConfirm={(e) => {
+                  e?.stopPropagation();
+                  remove(kb.id);
+                }}
+                onCancel={(e) => e?.stopPropagation()}
+              >
+                <Button
+                  type="text"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={(e) => e.stopPropagation()}
+                />
               </Popconfirm>,
             ]}
           >
-            <List.Item.Meta title={kb.name} description={kb.description || "无描述"} />
+            <List.Item.Meta title={kb.name} description={kb.description || "无描述（点击进入提问）"} />
           </List.Item>
         )}
       />
