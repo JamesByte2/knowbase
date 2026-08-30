@@ -1,0 +1,45 @@
+# 生产部署编排：数据服务只绑定 127.0.0.1，由宿主机 nginx/后端访问
+# 内存限制针对 1GB 小内存机器调优
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: knowbase-mysql
+    command: >
+      --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      --performance-schema=OFF --innodb-buffer-pool-size=48M
+      --max-connections=30 --innodb-redo-log-capacity=32M
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set in .env}
+      MYSQL_DATABASE: knowbase
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    mem_limit: 380m
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: knowbase-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    mem_limit: 64m
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: knowbase-qdrant
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    mem_limit: 420m
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+  qdrant_data:

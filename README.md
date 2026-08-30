@@ -2,6 +2,8 @@
 
 面向中小企业的私有知识库问答系统：上传文档（PDF/Word/Markdown/Excel），自动解析、切片、向量化，基于大模型进行检索增强问答（RAG），回答附带**引用溯源**（可查看原文片段）。
 
+**在线演示**：http://8.216.24.166 （阿里云香港轻量服务器，Docker + systemd + nginx 部署）
+
 > 技术栈：Python 3.12 + FastAPI + MySQL + Redis + Qdrant + React 18 + Ant Design
 
 ## 功能亮点
