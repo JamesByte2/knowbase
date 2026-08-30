@@ -37,6 +37,7 @@ class Document(IDMixin, Base):
 
     kb_id: Mapped[int] = mapped_column(ForeignKey("knowledge_bases.id"), index=True)
     filename: Mapped[str] = mapped_column(String(255))
+    stored_name: Mapped[str] = mapped_column(String(128), default="")
     file_type: Mapped[str] = mapped_column(String(16))
     size: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(16), default="pending", index=True)
