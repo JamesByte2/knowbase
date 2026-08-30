@@ -143,6 +143,10 @@ def process_document(document_id: int) -> None:
 
         vectors = embed_texts([c.content for c in chunks])
 
+        # 先 flush 让 Chunk 拿到自增 id，payload 里的 chunk_id 才有效
+        db.add_all(chunks)
+        db.flush()
+
         ensure_collection(client, doc.kb_id)
         client.upsert(
             collection_name=collection_name(doc.kb_id),
@@ -156,7 +160,6 @@ def process_document(document_id: int) -> None:
             ],
         )
 
-        db.add_all(chunks)
         doc.status = "ready"
         doc.chunk_count = len(chunks)
         doc.error = ""
